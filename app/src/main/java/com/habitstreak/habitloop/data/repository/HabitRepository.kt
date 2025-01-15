@@ -5,7 +5,7 @@ import com.habitstreak.habitloop.data.database.HabitEntity
 import kotlinx.coroutines.flow.Flow
 
 class HabitRepository(private val habitDao: HabitDao) {
-
+    // getting all the habits
     val allHabits: Flow<List<HabitEntity>> = habitDao.getAllHabits()
 
     suspend fun addOrUpdateHabit(habit: HabitEntity) {
