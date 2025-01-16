@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 class HabitRepository(private val habitDao: HabitDao) {
     // getting all the habits
+    // need to work in this tomorrow confirm
     val allHabits: Flow<List<HabitEntity>> = habitDao.getAllHabits()
 
     suspend fun addOrUpdateHabit(habit: HabitEntity) {
