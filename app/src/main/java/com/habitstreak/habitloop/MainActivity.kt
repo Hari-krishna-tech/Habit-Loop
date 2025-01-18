@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             HabitLoopTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    // need to code tomorrow for sure
                     Greeting(
                         name = "Android",
                         modifier = Modifier.padding(innerPadding)
