@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -23,65 +24,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
 
-            val navController = rememberNavController()
-            val currentBackStack by navController.currentBackStackEntryAsState()
-            val currentDestination = currentBackStack?.destination
-
-            val bottomBarDestinations = listOf(
-                Screen.HabitList,
-                Screen.CreationPresetList,
-                Screen.Settings
-            )
-
             HabitLoopTheme {
-                Scaffold(modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        TopAppBar(
-                            title = {Text(getScreenTitle(currentDestination?.route))}
-                        )
-                    },
-
-                    bottomBar = {
-                        if(bottomBarDestinations.any { it.route == currentDestination?.route }) {
-                            BottomNavigationBar(
-                                navController = navController,
-                                currentDestination = currentDestination
-                            )
-                        }
-                    }
-                    ) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                ) { innerPadding ->
                     // need to code tomorrow for sure
-                    NavHost(
-                        navController = navController,
-                        startDestination = Screen.HabitList.route,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        // Main bottom navigation screens
-                        composable(Screen.HabitList.route) {
-                            HabitListScreen(navController)
-                        }
-                        composable(Screen.CreationPresetList.route) {
-                            CreationPresetListScreen(navController)
-                        }
-                        composable(Screen.Settings.route) {
-                            SettingsScreen()
-                        }
-
-                        // Nested navigation screens
-                        composable(Screen.HabitCreate.route) {
-                            HabitCreateScreen(navController)
-                        }
-                        composable(Screen.HabitDetail.route) {
-                            HabitDetailScreen(navController)
-                        }
-                        composable(Screen.HabitEdit.route) {
-                            HabitEditScreen(navController)
-                        }
-                    }
+                   HelloWorld(innerPadding)
                 }
             }
         }
     }
 }
 
+@Composable
+fun HelloWorld(innerPadding: PaddingValues) {
+
+    Text(text = "hello wordl");
+
+}
 
