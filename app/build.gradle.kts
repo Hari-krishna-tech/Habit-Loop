@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.habitstreak.habitloop"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.habitstreak.habitloop"

@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
 import com.habitstreak.habitloop.navigation.Destinations
 
@@ -20,10 +21,10 @@ fun HabitDetailsScreen(
     viewModel: HabitViewModel
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    var habit by remember { mutableStateOf(null) }
+    var habit:HabitEntity? by remember { mutableStateOf(null) }
 
     LaunchedEffect(habitId) {
-        habit = habitId?.let { viewModel.getHabitById(it) } as Nothing?
+        habit = habitId?.let { viewModel.getHabitById(it) } as HabitEntity?
         if (habit == null) {
             navController.popBackStack()
             return@LaunchedEffect
