@@ -67,7 +67,7 @@ fun HabitListScreen(
                                         curStreak = habit.curStreak + 1,
                                         highestStreak = maxOf(habit.curStreak + 1, habit.highestStreak),
                                         lastStreakModified = LocalDateTime.now(),
-                                        acitivity = habit.acitivity + LocalDateTime.now().toLocalDate().toString()
+                                        activity = habit.activity + LocalDateTime.now().toLocalDate().toString()
                                     )
                                 )
                             }
