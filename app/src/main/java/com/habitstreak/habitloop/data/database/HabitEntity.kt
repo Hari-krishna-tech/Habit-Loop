@@ -14,7 +14,7 @@ data class HabitEntity(
     val frequency: List<String>,
     val curStreak: Int = 0,
     val highestStreak: Int = 0,
-    val activity: List<String>,
+    val activity: List<String> = emptyList(), // Store dates as "yyyy-MM-dd" strings
     val lastStreakModified: LocalDateTime,
     val isReminderSet: Boolean = false,
     val reminderTime: LocalDateTime? = null

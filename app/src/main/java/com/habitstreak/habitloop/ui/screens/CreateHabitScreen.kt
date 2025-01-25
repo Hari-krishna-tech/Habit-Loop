@@ -78,6 +78,7 @@ fun CreateHabitScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
+                    if(isCustomHabit) {
                     IconButton(
                         onClick = {
 
@@ -95,7 +96,7 @@ fun CreateHabitScreen(
                             modifier = Modifier.padding(horizontal = 4.dp),
 
                             )
-                    }
+                    } }
                 },
                 title = { Text(if (isCustomHabit) "Create Custom Habit" else "Choose Habit", modifier = Modifier.padding(horizontal = 8.dp)) },
 
