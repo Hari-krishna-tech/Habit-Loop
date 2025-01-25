@@ -208,7 +208,7 @@ fun HabitDetailsScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        val fakeActivity = listOf(
+                      /*  val fakeActivity = listOf(
                             // Recent activity
                             "2024-10-23", "2024-10-20", "2024-10-18", "2024-10-16",
                             "2024-10-13", "2024-10-11", "2024-10-09",
@@ -238,15 +238,14 @@ fun HabitDetailsScreen(
                                 activityDates = fakeActivity,
                         frequencyDays = currentHabit.frequency,
                         modifier = Modifier.height(200.dp)
-                        )
-
-                       /* GitHubStyleActivityChart(
+                        )*/
+                        GitHubStyleActivityChart(
                             activityDates = currentHabit.activity,
                             frequencyDays = currentHabit.frequency,
                             modifier = Modifier.height(200.dp)
                         )
 
-                        */
+
                     }
                 }
 
