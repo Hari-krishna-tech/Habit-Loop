@@ -19,6 +19,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Done
@@ -53,15 +54,51 @@ fun CreateHabitScreen(
     var reminderTime by remember { mutableStateOf<LocalDateTime?>(null) }
 
     val predefinedHabits = listOf(
-        PredefinedHabit("Exercise", "💪", setOf("Mon", "Wed", "Fri")),
-        PredefinedHabit("Read", "📚", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
-        PredefinedHabit("Meditate", "🧘", setOf("Mon", "Tue", "Wed", "Thu", "Fri"))
+        PredefinedHabit("Morning Water", "💧", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+        PredefinedHabit("Daily Steps", "👣", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+        PredefinedHabit("Evening Journal", "📔", setOf("Mon", "Tue", "Wed", "Thu", "Fri")),
+        PredefinedHabit("Protein Intake", "🍗", setOf("Mon", "Wed", "Fri", "Sun")),
+        PredefinedHabit("Digital Detox", "📵", setOf("Sat", "Sun")),
+        PredefinedHabit("Language Practice", "🗣️", setOf("Tue", "Thu", "Sat")),
+        PredefinedHabit("Posture Check", "🧘♂️", setOf("Mon", "Tue", "Wed", "Thu", "Fri")),
+        PredefinedHabit("Vitamin Intake", "💊", setOf("Mon", "Wed", "Fri")),
+        PredefinedHabit("Budget Review", "💰", setOf("Sun")),
+        PredefinedHabit("Skin Care", "✨", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+        PredefinedHabit("Learning Time", "🎓", setOf("Mon", "Tue", "Thu", "Fri")),
+        PredefinedHabit("Meal Prep", "🥗", setOf("Sun")),
+        PredefinedHabit("Gratitude Practice", "🙏", setOf("Mon", "Wed", "Fri")),
+        PredefinedHabit("Strength Training", "🏋️♂️", setOf("Mon", "Wed", "Fri")),
+        PredefinedHabit("Mindful Breathing", "🌬️", setOf("Tue", "Thu", "Sat")),
+        PredefinedHabit("Email Cleanup", "📧", setOf("Fri")),
+        PredefinedHabit("Family Time", "👨👩👧👦", setOf("Sat", "Sun")),
+        PredefinedHabit("Creative Time", "🎨", setOf("Wed", "Sat"))
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isCustomHabit) "Create Custom Habit" else "Choose Habit") }
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+
+                             if(isCustomHabit) {
+                                 isCustomHabit = false;
+                             } else {
+                                 navController.popBackStack()
+                             }
+                        }
+                    ) {
+
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            modifier = Modifier.padding(horizontal = 4.dp),
+
+                            )
+                    }
+                },
+                title = { Text(if (isCustomHabit) "Create Custom Habit" else "Choose Habit", modifier = Modifier.padding(horizontal = 8.dp)) },
+
             )
         }
     ) { padding ->
@@ -73,14 +110,28 @@ fun CreateHabitScreen(
                 contentPadding = PaddingValues(16.dp)
             ) {
                 item {
-                    Button(
-                        onClick = { isCustomHabit = true },
+
+
+                    FilledTonalButton(
+
+                        onClick = {
+                            isCustomHabit = true
+                        },
                         modifier = Modifier
+                            .padding(16.dp)
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                            .height(36.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
-                        Text("Create Custom Habit")
+                        Icon(Icons.Default.Create, contentDescription = "Create")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Create Custom Habit", fontWeight = FontWeight.Bold)
                     }
+
                 }
 
                 items(predefinedHabits) { predefinedHabit ->
