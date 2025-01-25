@@ -50,8 +50,10 @@ fun NavGraph(
 
         composable(
             route = "${Destinations.HABIT_DETAILS}/{${Destinations.HABIT_ID}}",
+            // declare's the name of the argument as habit_id and it's type as int
             arguments = listOf(navArgument(Destinations.HABIT_ID) { type = NavType.IntType })
         ) { backStackEntry ->
+            // backStackEntry provides access to the navigation back stack and arguments passed to the destination
             val habitId = backStackEntry.arguments?.getInt(Destinations.HABIT_ID)
             HabitDetailsScreen(habitId = habitId, navController = navController, viewModel = viewModel)
         }

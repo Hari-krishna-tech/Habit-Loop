@@ -13,11 +13,13 @@ import androidx.compose.runtime.getValue
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
+
 data class BottomNavItem(
     val title: String,
     val route: String,
     val icon: @Composable () -> Unit
 )
+
 
 @Composable
 fun BottomNavBar(navController: NavController) {

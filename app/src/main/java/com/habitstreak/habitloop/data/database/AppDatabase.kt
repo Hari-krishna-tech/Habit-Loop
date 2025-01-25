@@ -9,6 +9,7 @@ import androidx.room.TypeConverters
 @Database(entities = [HabitEntity::class], version = 1, exportSchema = false)
 @TypeConverters(HabitTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
+    // room injects HabitDao at the instance creation
     abstract fun habitDao(): HabitDao
 
     companion object {
