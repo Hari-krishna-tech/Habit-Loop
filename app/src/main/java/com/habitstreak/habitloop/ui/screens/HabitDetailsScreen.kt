@@ -1,17 +1,33 @@
 package com.habitstreak.habitloop.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
 import com.habitstreak.habitloop.navigation.Destinations
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +52,13 @@ fun HabitDetailsScreen(
             topBar = {
                 TopAppBar(
                     title = { Text(currentHabit.title) },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            navController.popBackStack();
+                        }){
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
+                    } ,
                     actions = {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -68,7 +91,8 @@ fun HabitDetailsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Emoji and Title
@@ -102,14 +126,14 @@ fun HabitDetailsScreen(
                                 text = currentHabit.curStreak.toString(),
                                 style = MaterialTheme.typography.headlineMedium
                             )
-                            Text("Current Streak")
+                            Text("Current Streak \uD83D\uDD25")
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = currentHabit.highestStreak.toString(),
                                 style = MaterialTheme.typography.headlineMedium
                             )
-                            Text("Highest Streak")
+                            Text("Highest Streak \uD83D\uDD25")
                         }
                     }
                 }
@@ -139,36 +163,120 @@ fun HabitDetailsScreen(
 
                 // Reminder
                 if (currentHabit.isReminderSet && currentHabit.reminderTime != null) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
+                    // Updated reminder display
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Reminder",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Set for ${currentHabit.reminderTime}")
-                        }
+                        Text(
+                            text = "Reminder",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = buildAnnotatedString {
+                                append("On ")
+
+                                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                    append(currentHabit.reminderTime?.format(DateTimeFormatter.ofPattern("h:mm a")) ?: "")
+                                }
+                                append("\nOn days: ${currentHabit.frequency.joinToString()}")
+                            }
+                        )
                     }
                 }
 
                 // Activity Chart (GitHub-style)
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Activity",
-                            style = MaterialTheme.typography.titleMedium
+                            text = "Activity Heatmap",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // TODO: Implement GitHub-style activity chart
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        GitHubStyleActivityChart(
+                            activityDates = currentHabit.activity,
+                            frequencyDays = currentHabit.frequency,
+                            modifier = Modifier.height(200.dp)
+                        )
                     }
+                }
+
+
+
+            }
+        }
+    }
+}
+
+@Composable
+private fun GitHubStyleActivityChart(
+    activityDates: List<String>,
+    frequencyDays: List<String>,
+    modifier: Modifier = Modifier
+) {
+    val today = LocalDate.now()
+    val startDate = today.minusYears(1)
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val dayFormatter = DateTimeFormatter.ofPattern("EEE", Locale.ENGLISH)
+
+    val activityDatesSet = activityDates.map { LocalDate.parse(it, dateFormatter) }.toSet()
+    val frequencyDaysSet = frequencyDays.map { it.uppercase() }.toSet()
+
+    val weeks = remember {
+        val totalDays = ChronoUnit.DAYS.between(startDate, today).toInt()
+        val weeks = mutableListOf<List<LocalDate>>()
+        var currentDate = startDate
+
+        repeat(53) { // 52 weeks + possible partial week
+            val weekDays = mutableListOf<LocalDate>()
+            repeat(7) {
+                if (currentDate.isBefore(today) || currentDate.isEqual(today)) {
+                    weekDays.add(currentDate)
+                    currentDate = currentDate.plusDays(1)
+                }
+            }
+            if (weekDays.isNotEmpty()) weeks.add(weekDays)
+        }
+        weeks
+    }
+
+    Box(modifier = modifier) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(7),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            contentPadding = PaddingValues(2.dp)
+        ) {
+            items(weeks) { week ->
+                week.forEach { date ->
+                    val isFrequencyDay = frequencyDaysSet.contains(
+                        dayFormatter.format(date).uppercase().take(3)
+                    )
+                    val isActive = activityDatesSet.contains(date)
+
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .background(
+                                color = when {
+                                    isActive -> Color(0xFF2E7D32) // Green for active days
+                                    isFrequencyDay -> Color(0xFF544D4D) // Light grey for frequency days
+                                    else -> Color(0xFF8A8A8A).copy(alpha = 0.3f) // Grey for non-frequency
+                                },
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                    )
                 }
             }
         }
