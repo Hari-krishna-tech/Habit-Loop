@@ -16,9 +16,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -116,248 +119,361 @@ fun CreateHabitScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp)
+                    .padding(8.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Habit Title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+               // Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = emoji,
-                    onValueChange = { emoji = it },
-                    label = { Text("Emoji") },
-                    modifier = Modifier.fillMaxWidth()
-                )
 
-                Text("Frequency", style = MaterialTheme.typography.titleMedium)
-                val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                val animatedProgress = remember { Animatable(0f) }
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        contentColor = MaterialTheme.colorScheme.surface
+                    )
 
-                LaunchedEffect(frequency) {
-                    animatedProgress.animateTo(1f)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "New Habit",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = { title = it },
+                            label = { Text("Habit Title") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Create, contentDescription = null)
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                focusedLeadingIconColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = emoji,
+                            onValueChange = { emoji = it },
+                            label = { Text("Emoji") },
+                            leadingIcon = {
+                                Text("😊", modifier = Modifier.size(24.dp));
+                            } ,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                focusedLeadingIconColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp)
+
+                        )
+                    }
                 }
 
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // frequency selector
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
-                    days.forEach { day ->
-                        val selected = frequency.contains(day)
-                        val backgroundColor by animateColorAsState(
-                            if (selected) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                            animationSpec = tween(300), label = ""
-                        )
+                    Column(modifier = Modifier.padding(16.dp)) {
 
-                        val borderColor by animateColorAsState(
-                            if (selected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outline,
-                            animationSpec = tween(300), label = ""
-                        )
 
-                        val textColor by animateColorAsState(
-                            if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            animationSpec = tween(300), label = ""
-                        )
+                        Text("Frequency", style = MaterialTheme.typography.titleMedium)
+                        val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                        val animatedProgress = remember { Animatable(0f) }
 
-                        val scale by animateFloatAsState(
-                            targetValue = if (selected) 1.1f else 1f,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow), label = ""
-                        )
+                        LaunchedEffect(frequency) {
+                            animatedProgress.animateTo(1f)
+                        }
 
-                        Box(
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.extraLarge)
-                                .border(
-                                    width = 1.dp,
-                                    color = borderColor,
-                                    shape = MaterialTheme.shapes.extraLarge
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            days.forEach { day ->
+                                val selected = frequency.contains(day)
+                                val backgroundColor by animateColorAsState(
+                                    if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                    animationSpec = tween(300), label = ""
                                 )
-                                .background(backgroundColor)
-                                .clickable {
-                                    frequency = if (selected) {
-                                        frequency - day
-                                    } else {
-                                        frequency + day
+
+                                val borderColor by animateColorAsState(
+                                    if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outline,
+                                    animationSpec = tween(300), label = ""
+                                )
+
+                                val textColor by animateColorAsState(
+                                    if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    animationSpec = tween(300), label = ""
+                                )
+
+                                val scale by animateFloatAsState(
+                                    targetValue = if (selected) 1.1f else 1f,
+                                    animationSpec = spring(stiffness = Spring.StiffnessLow), label = ""
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.extraLarge)
+                                        .border(
+                                            width = 1.dp,
+                                            color = borderColor,
+                                            shape = MaterialTheme.shapes.extraLarge
+                                        )
+                                        .background(backgroundColor)
+                                        .clickable {
+                                            frequency = if (selected) {
+                                                frequency - day
+                                            } else {
+                                                frequency + day
+                                            }
+                                        }
+                                        .animateContentSize()
+                                        .scale(scale)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                                    ) {
+                                        if (selected) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Check,
+                                                contentDescription = "Selected",
+                                                tint = textColor,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                        }
+
+                                        Text(
+                                            text = day.take(3),
+                                            color = textColor,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                        )
                                     }
                                 }
-                                .animateContentSize()
-                                .scale(scale)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                            ) {
-                                if (selected) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Check,
-                                        contentDescription = "Selected",
-                                        tint = textColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                }
-
-                                Text(
-                                    text = day.take(3),
-                                    color = textColor,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                                )
                             }
                         }
+
                     }
                 }
+
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        contentColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+
 
 // Replace the existing reminder section with this code
-                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-                val showTimePicker = remember { mutableStateOf(false) }
-                val timePickerState = rememberTimePickerState(
-                    initialHour = LocalTime.now().hour,
-                    initialMinute = LocalTime.now().minute
-                )
+                        val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+                        val showTimePicker = remember { mutableStateOf(false) }
+                        val timePickerState = rememberTimePickerState(
+                            initialHour = LocalTime.now().hour,
+                            initialMinute = LocalTime.now().minute
+                        )
 
 // Reminder Toggle Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .clickable { isReminderSet = !isReminderSet }
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val reminderColor by animateColorAsState(
-                        if (isReminderSet) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline,
-                        label = ""
-                    )
-
-                    Checkbox(
-                        checked = isReminderSet,
-                        onCheckedChange = { isReminderSet = it },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary,
-                            uncheckedColor = MaterialTheme.colorScheme.outline
-                        )
-                    )
-
-                    Text(
-                        text = "Daily Reminder",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    if (isReminderSet) {
-                        Icon(
-                            imageVector = Icons.Filled.Notifications,
-                            contentDescription = "Reminder Set",
-                            tint = reminderColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-
-// Time Display/Picker
-                if (isReminderSet) {
-                    val currentTime = remember { LocalTime.now() }
-                    val formattedTime = remember(reminderTime) {
-                        reminderTime?.toLocalTime()?.format(timeFormatter) ?: "Select Time"
-                    }
-
-                    val backgroundColor by animateColorAsState(
-                        if (reminderTime != null) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        label = ""
-                    )
-
-                    val textColor by animateColorAsState(
-                        if (reminderTime != null) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        label = ""
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.extraLarge)
-                            .background(backgroundColor)
-                            .clickable { showTimePicker.value = true }
-                            .padding(16.dp)
-                    ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable { isReminderSet = !isReminderSet }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Notifications,
-                                contentDescription = "Time",
-                                tint = textColor,
-                                modifier = Modifier.size(20.dp)
+                            val reminderColor by animateColorAsState(
+                                if (isReminderSet) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline,
+                                label = ""
+                            )
+
+                            Checkbox(
+                                checked = isReminderSet,
+                                onCheckedChange = { isReminderSet = it },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = MaterialTheme.colorScheme.primary,
+                                    uncheckedColor = MaterialTheme.colorScheme.outline
+                                )
                             )
 
                             Text(
-                                text = formattedTime,
+                                text = "Daily Reminder",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = textColor,
-                                fontWeight = FontWeight.Medium
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (isReminderSet) {
+                                Icon(
+                                    imageVector = Icons.Filled.Notifications,
+                                    contentDescription = "Reminder Set",
+                                    tint = reminderColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+// Time Display/Picker
+                        if (isReminderSet) {
+                            val currentTime = remember { LocalTime.now() }
+                            val formattedTime = remember(reminderTime) {
+                                reminderTime?.toLocalTime()?.format(timeFormatter) ?: "Select Time"
+                            }
+
+                            val backgroundColor by animateColorAsState(
+                                if (reminderTime != null) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant,
+                                label = ""
+                            )
+
+                            val textColor by animateColorAsState(
+                                if (reminderTime != null) MaterialTheme.colorScheme.onPrimaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                label = ""
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.extraLarge)
+                                    .background(backgroundColor)
+                                    .clickable { showTimePicker.value = true }
+                                    .padding(16.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Notifications,
+                                        contentDescription = "Time",
+                                        tint = textColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+
+                                    Text(
+                                        text = formattedTime,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = textColor,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
+// Time Picker Dialog
+                        if (showTimePicker.value) {
+                            AlertDialog(
+                                onDismissRequest = { showTimePicker.value = false },
+                                title = { Text("Select Reminder Time") },
+                                text = {
+                                    Column(
+                                        modifier = Modifier.padding(top = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        TimePicker(
+                                            state = timePickerState,
+                                            colors = TimePickerDefaults.colors(
+                                                clockDialColor = MaterialTheme.colorScheme.primary,
+                                                selectorColor = MaterialTheme.colorScheme.primary,
+                                                clockDialUnselectedContentColor = MaterialTheme.colorScheme.outline
+                                            )
+                                        )
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            val now = LocalDateTime.now()
+                                            reminderTime = now
+                                                .withHour(timePickerState.hour)
+                                                .withMinute(timePickerState.minute)
+                                            showTimePicker.value = false
+                                        }
+                                    ) {
+                                        Text("Set Time")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = { showTimePicker.value = false }
+                                    ) {
+                                        Text("Cancel")
+                                    }
+                                }
                             )
                         }
                     }
                 }
 
-// Time Picker Dialog
-                if (showTimePicker.value) {
-                    AlertDialog(
-                        onDismissRequest = { showTimePicker.value = false },
-                        title = { Text("Select Reminder Time") },
-                        text = {
-                            Column(
-                                modifier = Modifier.padding(top = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                TimePicker(
-                                    state = timePickerState,
-                                    colors = TimePickerDefaults.colors(
-                                        clockDialColor = MaterialTheme.colorScheme.primary,
-                                        selectorColor = MaterialTheme.colorScheme.primary,
-                                        clockDialUnselectedContentColor = MaterialTheme.colorScheme.outline
-                                    )
-                                )
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    val now = LocalDateTime.now()
-                                    reminderTime = now
-                                        .withHour(timePickerState.hour)
-                                        .withMinute(timePickerState.minute)
-                                    showTimePicker.value = false
-                                }
-                            ) {
-                                Text("Set Time")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = { showTimePicker.value = false }
-                            ) {
-                                Text("Cancel")
-                            }
-                        }
-                    )
-                }
 
-                Button(
+               FilledTonalButton(
+                   onClick = {
+                       if (title.isNotBlank() && frequency.isNotEmpty()) {
+                           viewModel.addOrUpdateHabit(
+                               HabitEntity(
+                                   title = title,
+                                   emoji = emoji,
+                                   frequency = frequency.toList(),
+                                   lastStreakModified = LocalDateTime.now(),
+                                   isReminderSet = isReminderSet,
+                                   reminderTime = reminderTime,
+                                   activity = emptyList()
+                               )
+                           )
+                           navController.popBackStack()
+                       }
+                   },
+                   modifier = Modifier
+                       .padding(16.dp)
+                       .fillMaxWidth()
+                       .height(48.dp),
+                   shape = RoundedCornerShape(12.dp),
+                   colors = ButtonDefaults.filledTonalButtonColors(
+                       containerColor = MaterialTheme.colorScheme.primary,
+                       contentColor = MaterialTheme.colorScheme.onPrimary
+                   )
+               ) {
+                   Icon(Icons.Default.Done, contentDescription = "save")
+                   Spacer(modifier = Modifier.width(8.dp))
+                   Text("Save Habit", fontWeight = FontWeight.Bold)
+               }
+                Spacer(modifier = Modifier.height(16.dp))
+             /*   Button(
                     onClick = {
                         if (title.isNotBlank() && frequency.isNotEmpty()) {
                             viewModel.addOrUpdateHabit(
@@ -377,7 +493,7 @@ fun CreateHabitScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Save Habit")
-                }
+                }*/
             }
         }
     }
