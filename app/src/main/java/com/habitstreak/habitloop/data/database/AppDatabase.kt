@@ -1,12 +1,13 @@
 package com.habitstreak.habitloop.data.database
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [HabitEntity::class], version = 1, exportSchema = false)
+@Database(entities = [HabitEntity::class], version = 1, exportSchema = true)
 @TypeConverters(HabitTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     // room injects HabitDao at the instance creation
