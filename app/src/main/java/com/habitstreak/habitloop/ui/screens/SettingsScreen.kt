@@ -2,9 +2,11 @@ package com.habitstreak.habitloop.ui.screens
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,10 +36,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,9 +52,15 @@ fun SettingsScreen(
 
     val context = LocalContext.current
     var darkMode by remember { mutableStateOf(false) }
-
+    var isImporting by remember { mutableStateOf(false) }
 
     // Json Export/ import Logic
+
+    if (isImporting) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+    }
 
 
     val scope = rememberCoroutineScope()
@@ -79,14 +90,28 @@ fun SettingsScreen(
         uri?.let {
             scope.launch {
                 try {
+                    isImporting =true;
                     context.contentResolver.openInputStream(uri)?.use { inputStream ->
                         val json = inputStream.bufferedReader().use { it.readText() }
-                        val habits = Gson().fromJson(json, Array<HabitEntity>::class.java).toList()
+//                        val habits = Gson().fromJson(json, Array<HabitEntity>::class.java).toList()
+//                        if(habits.isNullOrEmpty()) {
+//                            Toast.makeText(context, "Invalid data format", Toast.LENGTH_SHORT).show()
+//                            return@launch
+//                        }
+                        val habits = safeParseHabits(json) ?: run {
+                            Toast.makeText(context, "Invalid JSON format", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
                         viewModel.importHabits(habits) // Now in coroutine
+                        Toast.makeText(context, "Habits imported successfully", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                } finally {
+                    isImporting = false
                 }
+
             }
         }
     }
@@ -139,7 +164,7 @@ topBar = {
         // Import Button
         SettingsButton(
             text = "Import Habits",
-            onClick = { importLauncher.launch("application.json") }
+            onClick = { importLauncher.launch("application/json") }
         )
     }
 }
@@ -160,6 +185,18 @@ private fun SettingsButton(text: String, onClick: () -> Unit) {
     }
 }
 
+fun safeParseHabits(json: String): List<HabitEntity>? {
+    return try {
+        Gson().fromJson(json, Array<HabitEntity>::class.java)?.map { habit ->
+            habit.copy(
+                lastStreakModified = habit.lastStreakModified ?: LocalDateTime.now().minusDays(1),
+                reminderTime = habit.reminderTime ?: LocalDateTime.now()
+            )
+        }?.toList()
+    } catch (e: JsonSyntaxException) {
+        null
+    }
+}
 
 
 /*

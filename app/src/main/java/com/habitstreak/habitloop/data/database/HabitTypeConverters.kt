@@ -24,6 +24,10 @@ class HabitTypeConverters {
     @SuppressLint("NewApi")
     @TypeConverter
     fun toLocalDateTime(value: String?): LocalDateTime? {
-        return value?.let { LocalDateTime.parse(it) }
+        return try {
+            value?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now().minusDays(1)
+        } catch (e: Exception) {
+            LocalDateTime.now().minusDays(1)
+        }
     }
 }

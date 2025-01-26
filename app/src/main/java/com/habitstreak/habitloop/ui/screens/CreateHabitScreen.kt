@@ -503,7 +503,7 @@ fun CreateHabitScreen(
                                    frequency = frequency.toList(),
                                    lastStreakModified = LocalDateTime.now().minusDays(1) ,
                                    isReminderSet = isReminderSet,
-                                   reminderTime = reminderTime,
+                                   reminderTime = reminderTime ?: LocalDateTime.now(),
                                    activity = emptyList()
                                )
                            )

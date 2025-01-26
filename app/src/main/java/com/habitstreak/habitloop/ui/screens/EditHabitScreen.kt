@@ -86,7 +86,7 @@ fun EditHabitScreen(
                                             emoji = emoji,
                                             frequency = frequency.toList(),
                                             isReminderSet = isReminderSet,
-                                            reminderTime = reminderTime
+                                            reminderTime = reminderTime ?: LocalDateTime.now()
                                         )
                                     )
                                 }

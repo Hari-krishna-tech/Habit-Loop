@@ -9,13 +9,13 @@ import java.time.LocalDateTime
 @Entity(tableName = "habits")
 data class HabitEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val title: String,
-    val emoji: String,
-    val frequency: List<String>,
+    val title: String = "",
+    val emoji: String = "",
+    val frequency: List<String> = emptyList(),
     val curStreak: Int = 0,
     val highestStreak: Int = 0,
     val activity: List<String> = emptyList(), // Store dates as "yyyy-MM-dd" strings
-    val lastStreakModified: LocalDateTime,
+    val lastStreakModified: LocalDateTime = LocalDateTime.now().minusDays(1),
     val isReminderSet: Boolean = false,
-    val reminderTime: LocalDateTime? = null
+    val reminderTime: LocalDateTime = LocalDateTime.now()
 )
