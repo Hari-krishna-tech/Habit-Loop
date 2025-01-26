@@ -12,6 +12,7 @@ import com.habitstreak.habitloop.ui.screens.HabitListScreen;
 import com.habitstreak.habitloop.ui.screens.CreateHabitScreen;
 import com.habitstreak.habitloop.ui.screens.HabitDetailsScreen;
 import com.habitstreak.habitloop.ui.screens.EditHabitScreen;
+import com.habitstreak.habitloop.ui.screens.SettingsScreen
 
 object Destinations {
     const val HABIT_LIST = "habit_list"
@@ -46,6 +47,7 @@ fun NavGraph(
 
         composable(Destinations.SETTINGS) {
             // SettingsScreen will be implemented later
+            SettingsScreen(navController = navController, viewModel = viewModel)
         }
 
         composable(

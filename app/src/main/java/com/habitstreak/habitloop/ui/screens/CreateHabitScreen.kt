@@ -501,7 +501,7 @@ fun CreateHabitScreen(
                                    title = title,
                                    emoji = emoji,
                                    frequency = frequency.toList(),
-                                   lastStreakModified = LocalDateTime.now(),
+                                   lastStreakModified = LocalDateTime.now().minusDays(1) ,
                                    isReminderSet = isReminderSet,
                                    reminderTime = reminderTime,
                                    activity = emptyList()

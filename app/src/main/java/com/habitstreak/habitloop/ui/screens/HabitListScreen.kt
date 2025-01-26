@@ -1,23 +1,38 @@
 package com.habitstreak.habitloop.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
 import com.habitstreak.habitloop.navigation.Destinations
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import kotlin.math.abs
 
 @SuppressLint("NewApi")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -30,99 +45,277 @@ fun HabitListScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate(Destinations.CREATE_HABIT) }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Habit")
-            }
+            ExtendedFloatingActionButton(
+                onClick = { navController.navigate(Destinations.CREATE_HABIT) },
+                icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                text = { Text("New Habit") },
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
         }
     ) { padding ->
         if (habits.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No habits yet. Create one!")
-            }
+          EmptyStateUI(modifier = Modifier.padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(16.dp)
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(
                     items = habits,
                     key = { habit -> habit.id }
                 ) { habit ->
-                    HabitItem(
-                        habit = habit,
-                        onLongClick = {
-                            // Check if streak can be updated today
-                            if (habit.lastStreakModified.toLocalDate() != LocalDateTime.now().toLocalDate()) {
-                                viewModel.addOrUpdateHabit(
-                                    habit.copy(
-                                        curStreak = habit.curStreak + 1,
-                                        highestStreak = maxOf(habit.curStreak + 1, habit.highestStreak),
-                                        lastStreakModified = LocalDateTime.now(),
-                                        activity = habit.activity + LocalDateTime.now().toLocalDate().toString()
-                                    )
-                                )
-                            }
-                        },
-                        onClick = { navController.navigate("${Destinations.HABIT_DETAILS}/${habit.id}") },
-                        onDelete = { viewModel.deleteHabit(habit) }
-                    )
+                   SwipeToDeleteContainer(
+                       onDelete = {viewModel.deleteHabit(habit)}
+                   ) {
+                       HabitItem(habit = habit, onLongClick = {
+                           tryUpdateStreak(habit, viewModel)
+                       }, onClick = {
+                           navController.navigate("${Destinations.HABIT_DETAILS}/${habit.id}")
+                       })
+                   }
                 }
             }
         }
     }
 }
+@Composable
+private fun SwipeToDeleteContainer(
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    var swipeOffset by remember { mutableStateOf(0f) }
+    val swipeThreshold = with(LocalDensity.current) { 200.dp.toPx() } // Increased threshold
+    val animatedOffset by animateFloatAsState(
+        targetValue = swipeOffset,
+        animationSpec = tween(durationMillis = 400), // Slower animation
+        label = "swipeAnimation"
+    )
 
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf(false) }
+
+    if (showConfirmationDialog) {
+        DeleteConfirmationDialog(
+            onConfirm = {
+                onDelete()
+                showConfirmationDialog = false
+            },
+            onDismiss = {
+                showConfirmationDialog = false
+                pendingDelete = false
+            }
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+    ) {
+        // Delete background with warning
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterEnd)
+                .padding(end = 32.dp), // More padding
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = "Delete Warning",
+                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete",
+                tint = MaterialTheme.colorScheme.error
+            )
+        }
+
+        // Swipeable content with resistance
+        Box(
+            modifier = Modifier
+                .offset(x = animatedOffset.dp)
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (abs(swipeOffset) > swipeThreshold) {
+                                pendingDelete = true
+                                showConfirmationDialog = true
+                            } else {
+                                swipeOffset = 0f
+                            }
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            // Add resistance (40% of drag amount)
+                            swipeOffset = (swipeOffset + dragAmount * 0.7f)
+                                .coerceIn(-swipeThreshold * 1.5f, 0f)
+                        }
+                    )
+                }
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Deletion") },
+        text = { Text("This action cannot be undone. Delete this habit?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun EmptyStateUI(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "✨ No Habits Yet!",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = "Long press habits to update streaks",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun StreakCounter(current: Int, highest: Int, enabled: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        BadgedBox(
+            badge = {
+                Badge {
+                    Text(highest.toString())
+                }
+            }
+        ) {
+            Text(
+                text = current.toString(),
+                style = MaterialTheme.typography.displaySmall,
+                color = if (enabled) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = if (enabled) "Tap & hold to update" else "Not today",
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
+
+
+private fun tryUpdateStreak(habit: HabitEntity, viewModel: HabitViewModel) {
+    val today = LocalDate.now()
+    // activity should be in the format of yyyy-MM-dd
+    val activityDate: String = today.toString()
+    println("Control Reaches here")
+    viewModel.addOrUpdateHabit(
+        habit.copy(
+            curStreak = habit.curStreak + 1,
+            highestStreak = maxOf(habit.highestStreak, habit.curStreak + 1),
+            lastStreakModified = LocalDateTime.now(),
+            activity = habit.activity + activityDate
+        )
+    )
+}
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HabitItem(
     habit: HabitEntity,
     onLongClick: () -> Unit,
     onClick: () -> Unit,
-    onDelete: () -> Unit
 ) {
-    var isDeleting by remember { mutableStateOf(false) }
+    val today = LocalDate.now()
+    val lastModified = habit.lastStreakModified.toLocalDate()
+    val daysSinceLast = ChronoUnit.DAYS.between(lastModified, today)
+    // Convert day name to match frequency format ("Mon", "Tue")
+    val currentDayFormatted = today.dayOfWeek.name
+        .take(3)
+        .lowercase()
+        .replaceFirstChar { it.uppercase() }
+    val canUpdate = daysSinceLast >= 1 && currentDayFormatted in habit.frequency
+
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = onLongClick
-            )
+                onLongClick = { if (canUpdate) onLongClick() }
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = habit.emoji,
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape
+                        )
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = habit.title,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Streak: ${habit.curStreak}",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = habit.emoji,
+                        style = MaterialTheme.typography.headlineMedium
                     )
                 }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Text(
+                    text = habit.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Badge(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
+                Text(
+                    text = "${habit.curStreak}🔥",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }
