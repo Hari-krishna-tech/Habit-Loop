@@ -17,8 +17,8 @@ class HabitTypeConverters {
     }
 
     @TypeConverter
-    fun fromLocalDateTime(dateTime: LocalDateTime?): String? {
-        return dateTime?.toString()
+    fun fromLocalDateTime(dateTime: LocalDateTime?): String {
+        return dateTime?.toString() ?: LocalDateTime.now().toString();
     }
 
     @SuppressLint("NewApi")

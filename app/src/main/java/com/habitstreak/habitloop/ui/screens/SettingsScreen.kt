@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -36,11 +39,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import com.google.gson.JsonSyntaxException
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.lang.reflect.Type
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,10 +61,13 @@ fun SettingsScreen(
     viewModel: HabitViewModel
     ) {
 
+    val isSystemDark = isSystemInDarkTheme()
     val context = LocalContext.current
-    var darkMode by remember { mutableStateOf(false) }
+    var darkMode by remember { mutableStateOf(isSystemDark) }
     var isImporting by remember { mutableStateOf(false) }
 
+    // Theme info
+    //val currentTheme = if (darkMode) DarkColorScheme else LightColorScheme
     // Json Export/ import Logic
 
     if (isImporting) {
@@ -72,8 +86,13 @@ fun SettingsScreen(
         uri?.let {
             scope.launch {
                 try {
+                    val gson = GsonBuilder()
+                        .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeSerializer())
+                        .create()
                     val habits = viewModel.allHabits.first() // Now in coroutine
-                    val json = Gson().toJson(habits)
+                    val json = gson.toJson(habits)
+                    println("export screen")
+                    println(json)
                     context.contentResolver.openOutputStream(uri)?.use { os ->
                         os.write(json.toByteArray())
                     }
@@ -147,10 +166,16 @@ topBar = {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Dark Mode", style = MaterialTheme.typography.bodyLarge)
+                Text("Dark Mode", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Switch(
                     checked = darkMode,
-                    onCheckedChange = { darkMode = it }
+                    onCheckedChange = { darkMode = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 )
             }
         }
@@ -187,17 +212,42 @@ private fun SettingsButton(text: String, onClick: () -> Unit) {
 
 fun safeParseHabits(json: String): List<HabitEntity>? {
     return try {
-        Gson().fromJson(json, Array<HabitEntity>::class.java)?.map { habit ->
-            habit.copy(
-                lastStreakModified = habit.lastStreakModified ?: LocalDateTime.now().minusDays(1),
-                reminderTime = habit.reminderTime ?: LocalDateTime.now()
-            )
-        }?.toList()
-    } catch (e: JsonSyntaxException) {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeDeserializer())
+            .create()
+
+        gson.fromJson(json, Array<HabitEntity>::class.java)?.toList()
+    } catch (e: Exception) {
+        e.printStackTrace()
         null
     }
 }
 
+class LocalDateTimeSerializer : JsonSerializer<LocalDateTime> {
+    override fun serialize(
+        src: LocalDateTime?,
+        typeOfSrc: Type?,
+        context: JsonSerializationContext?
+    ): JsonElement {
+        return JsonPrimitive(src?.toString() ?: "")
+    }
+
+
+}
+
+class LocalDateTimeDeserializer : JsonDeserializer<LocalDateTime> {
+    override fun deserialize(
+        json: JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
+    ): LocalDateTime {
+        return try {
+            LocalDateTime.parse(json?.asString)
+        } catch (e: Exception) {
+            LocalDateTime.now().minusDays(1) // Fallback for invalid dates
+        }
+    }
+}
 
 /*
 class JsonHandler(private val context: Context, private val viewModel: HabitViewModel) {

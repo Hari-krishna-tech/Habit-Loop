@@ -496,6 +496,14 @@ fun CreateHabitScreen(
                FilledTonalButton(
                    onClick = {
                        if (title.isNotBlank() && frequency.isNotEmpty()) {
+                           println("habit creation")
+                           println(title)
+                           println(emoji)
+                           println(frequency.toList())
+                           println(LocalDateTime.now().minusDays(1).toString())
+                           println(isReminderSet)
+                           println(reminderTime ?: LocalDateTime.now())
+
                            viewModel.addOrUpdateHabit(
                                HabitEntity(
                                    title = title,
