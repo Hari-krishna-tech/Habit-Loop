@@ -43,6 +43,10 @@ android {
 dependencies {
     val room_version = "2.6.1"
 
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+
 
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.activity:activity-compose:1.8.2")
