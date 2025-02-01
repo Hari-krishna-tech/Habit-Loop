@@ -1,33 +1,27 @@
 package com.habitstreak.habitloop.utils
 
+import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import com.habitstreak.habitloop.data.viewmodel.ThemeViewModel
 import com.habitstreak.habitloop.ui.theme.HabitLoopTheme
 
 @Composable
 fun ThemeWrapper(
-    viewModel: ThemeViewModel = ThemeViewModel(
-        dataStore = TODO()
-    ),
+    viewModel: ThemeViewModel = ThemeViewModel(LocalContext.current.applicationContext.dataStore),
     content: @Composable () -> Unit
 ) {
-    val systemDarkTheme = isSystemInDarkTheme()
-    val userPreference by viewModel.themeState.collectAsState()
-
-    val isDarkMode = when (userPreference) {
+    val themeState by viewModel.themeState.collectAsState()
+    val isDarkMode = when (themeState) {
         true -> true
         false -> false
-        null -> systemDarkTheme
-        else -> {}
+        null -> isSystemInDarkTheme()
     }
 
-    HabitLoopTheme (
-        colors = if (isDarkMode) DarkColors else LightColors
-    ) {
+    HabitLoopTheme(darkTheme = isDarkMode) {
         content()
     }
 }

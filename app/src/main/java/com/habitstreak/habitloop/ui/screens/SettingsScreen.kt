@@ -28,6 +28,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +50,7 @@ import com.google.gson.JsonSerializer
 import com.google.gson.JsonSyntaxException
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
+import com.habitstreak.habitloop.data.viewmodel.ThemeViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.lang.reflect.Type
@@ -58,13 +60,16 @@ import java.time.LocalDateTime
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: HabitViewModel
+    viewModel: HabitViewModel,
+    themeViewModel: ThemeViewModel = ThemeViewModel(LocalContext.current.applicationContext.dataStore)
     ) {
 
     val isSystemDark = isSystemInDarkTheme()
     val context = LocalContext.current
     var darkMode by remember { mutableStateOf(isSystemDark) }
     var isImporting by remember { mutableStateOf(false) }
+
+    val themeState by themeViewModel.themeState.collectAsState()
 
     // Theme info
     //val currentTheme = if (darkMode) DarkColorScheme else LightColorScheme
@@ -169,7 +174,7 @@ topBar = {
                 Text("Dark Mode", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Switch(
                     checked = darkMode,
-                    onCheckedChange = { darkMode = it },
+                    onCheckedChange = { themeViewModel.updateThemePreference(it) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.primary,
                         checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
