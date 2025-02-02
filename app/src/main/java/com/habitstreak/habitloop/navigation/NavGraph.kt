@@ -30,7 +30,8 @@ fun NavGraph(
     navController: NavHostController,
     startDestination: String = Destinations.HABIT_LIST,
     modifier: Modifier = Modifier,
-    viewModel: HabitViewModel
+    viewModel: HabitViewModel,
+    onDarkModeChanged: (Boolean) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -47,7 +48,7 @@ fun NavGraph(
 
         composable(Destinations.SETTINGS) {
             // SettingsScreen will be implemented later
-            SettingsScreen(navController = navController, viewModel = viewModel)
+            SettingsScreen(navController = navController, viewModel = viewModel, onDarkModeChanged)
         }
 
         composable(

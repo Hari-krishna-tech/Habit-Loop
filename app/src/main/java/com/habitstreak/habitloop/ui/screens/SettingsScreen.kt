@@ -1,5 +1,6 @@
 package com.habitstreak.habitloop.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
@@ -50,18 +51,19 @@ import com.google.gson.JsonSerializer
 import com.google.gson.JsonSyntaxException
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
-import com.habitstreak.habitloop.data.viewmodel.ThemeViewModel
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.lang.reflect.Type
 import java.time.LocalDateTime
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
     viewModel: HabitViewModel,
-    themeViewModel: ThemeViewModel = ThemeViewModel(LocalContext.current.applicationContext.dataStore)
+    onDarkModeChanged: (Boolean) -> Unit
     ) {
 
     val isSystemDark = isSystemInDarkTheme()
@@ -69,7 +71,6 @@ fun SettingsScreen(
     var darkMode by remember { mutableStateOf(isSystemDark) }
     var isImporting by remember { mutableStateOf(false) }
 
-    val themeState by themeViewModel.themeState.collectAsState()
 
     // Theme info
     //val currentTheme = if (darkMode) DarkColorScheme else LightColorScheme
@@ -174,7 +175,12 @@ topBar = {
                 Text("Dark Mode", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Switch(
                     checked = darkMode,
-                    onCheckedChange = { themeViewModel.updateThemePreference(it) },
+                    onCheckedChange = { it ->
+                        run {
+                            darkMode = it;
+                            onDarkModeChanged(it)
+                        }
+                    },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.primary,
                         checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,

@@ -9,6 +9,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -20,17 +24,16 @@ import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
 import com.habitstreak.habitloop.navigation.BottomNavBar
 import com.habitstreak.habitloop.navigation.NavGraph
 import com.habitstreak.habitloop.ui.theme.HabitLoopTheme
-import com.habitstreak.habitloop.utils.ThemeWrapper
 
 
-val Application.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ThemeWrapper  {
+            var isDarkMode by remember { mutableStateOf(false) };
+            HabitLoopTheme(darkTheme = isDarkMode)  {
                 val navController = rememberNavController()
 
                 val habitDao = AppDatabase.getInstance(applicationContext).habitDao();
@@ -45,11 +48,13 @@ class MainActivity : ComponentActivity() {
                     NavGraph(
                         navController = navController,
                         modifier = Modifier.padding(innerPadding),
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        onDarkModeChanged = { isDarkMode = it }
                     )
                 }
             }
         }
     }
 }
+
 
