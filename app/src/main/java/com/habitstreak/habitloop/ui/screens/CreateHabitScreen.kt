@@ -30,14 +30,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.habitstreak.habitloop.data.database.HabitEntity
 import com.habitstreak.habitloop.data.viewmodel.HabitViewModel
+import com.habitstreak.habitloop.utils.mapDayStringToCalendarDay
+import com.habitstreak.habitloop.utils.scheduleReminder
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import android.widget.Toast
 
 @SuppressLint("NewApi")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -52,6 +64,43 @@ fun CreateHabitScreen(
     var frequency by remember { mutableStateOf(setOf<String>()) }
     var isReminderSet by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf<LocalDateTime?>(null) }
+    val context = LocalContext.current;
+
+    // notification permission handling
+    fun scheduleReminders(context: Context) {
+        if (isReminderSet && reminderTime != null) {
+            val hour = reminderTime!!.hour
+            val minute = reminderTime!!.minute
+            frequency.forEach { dayString ->
+                try {
+                    val dayOfWeek = mapDayStringToCalendarDay(dayString)
+                    scheduleReminder(context, dayOfWeek, hour, minute)
+                } catch (e: IllegalArgumentException) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    val alarmPermission = Manifest.permission.SCHEDULE_EXACT_ALARM
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        isGranted ->
+        if(isGranted) {
+            scheduleReminders(context);
+        } else {
+            Toast.makeText(
+                context,
+                "Permission denied. Reminders might not work properly.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        // navigate back after permission decision
+        navController.popBackStack()
+    }
+
 
     val predefinedHabits = listOf(
         PredefinedHabit("Morning Water", "💧", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
@@ -515,7 +564,35 @@ fun CreateHabitScreen(
                                    activity = emptyList()
                                )
                            )
-                           navController.popBackStack()
+
+
+                           // Schedule reminders if enabled
+
+                           if(isReminderSet) {
+                               val handlePermission: () -> Unit = {
+                                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                       if (ContextCompat.checkSelfPermission(
+                                               context,
+                                               alarmPermission
+                                           ) == PackageManager.PERMISSION_GRANTED
+                                       ) {
+                                           scheduleReminders(context)
+                                           navController.popBackStack()
+                                       } else {
+                                           // Show permission dialog without popping back
+                                           permissionLauncher.launch(alarmPermission)
+                                       }
+                                   } else {
+                                       scheduleReminders(context)
+                                       navController.popBackStack()
+                                   }
+                               }
+
+                               // Execute the permission handling
+                               handlePermission()
+                           } else {
+                               navController.popBackStack()
+                           }
                        }
                    },
                    modifier = Modifier
@@ -558,6 +635,7 @@ fun CreateHabitScreen(
         }
     }
 }
+
 
 data class PredefinedHabit(
     val title: String,
