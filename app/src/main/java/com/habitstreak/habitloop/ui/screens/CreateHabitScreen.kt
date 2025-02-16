@@ -162,6 +162,50 @@ fun CreateHabitScreen(
         )
     }
 
+
+    // Add permission launcher for POST_NOTIFICATIONS
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Notification permission granted
+            if (hasAlarmPermission(context)) {
+                scheduleReminders(context)
+                navController.popBackStack()
+            } else {
+                showPermissionDialog = true
+            }
+        } else {
+            Toast.makeText(
+                context,
+                "Notifications won't work without permission",
+                Toast.LENGTH_LONG
+            ).show()
+            navController.popBackStack()
+        }
+    }
+
+
+    // Check and request notification permission
+    fun checkAndRequestNotificationPermission(context: Context, onPermissionResult: (Boolean) -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    onPermissionResult(true)
+                }
+                else -> {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            // Permission not needed for Android 12 and below
+            onPermissionResult(true)
+        }
+    }
+
     /*
         if(showPermissionDialog) {
             BasicAlertDialog(
@@ -665,29 +709,50 @@ fun CreateHabitScreen(
                            println(LocalDateTime.now().minusDays(1).toString())
                            println(isReminderSet)
                            println(reminderTime ?: LocalDateTime.now())
-                           if(isReminderSet && !hasAlarmPermission(context)) {
-                               showPermissionDialog = true
+                           if (isReminderSet) {
+                               // First check notification permission
+                               checkAndRequestNotificationPermission(context) { notificationGranted ->
+                                   if (notificationGranted) {
+                                       if (hasAlarmPermission(context)) {
+                                           viewModel.addOrUpdateHabit(
+                                               HabitEntity(
+                                                   title = title,
+                                                   emoji = emoji,
+                                                   frequency = frequency.toList(),
+                                                   lastStreakModified = LocalDateTime.now()
+                                                       .minusDays(1),
+                                                   isReminderSet = isReminderSet,
+                                                   reminderTime = reminderTime
+                                                       ?: LocalDateTime.now(),
+                                                   activity = emptyList()
+                                               )
+                                           )
+                                           scheduleReminders(context)
+                                           navController.popBackStack()
+                                       } else {
+                                           showPermissionDialog = true
+                                       }
+                                   }
+                               }
                            } else {
-                           viewModel.addOrUpdateHabit(
-                               HabitEntity(
-                                   title = title,
-                                   emoji = emoji,
-                                   frequency = frequency.toList(),
-                                   lastStreakModified = LocalDateTime.now().minusDays(1) ,
-                                   isReminderSet = isReminderSet,
-                                   reminderTime = reminderTime ?: LocalDateTime.now(),
-                                   activity = emptyList()
+                               // Save without reminders
+                               viewModel.addOrUpdateHabit(
+                                   HabitEntity(
+                                       title = title,
+                                       emoji = emoji,
+                                       frequency = frequency.toList(),
+                                       lastStreakModified = LocalDateTime.now().minusDays(1),
+                                       isReminderSet = false,
+                                       reminderTime = reminderTime ?: LocalDateTime.now(),
+                                       activity = emptyList()
+                                   )
                                )
-                           )
+                               navController.popBackStack()
+                           }
 
 
-                           // Schedule reminders if enabled
-                            if(isReminderSet && hasAlarmPermission(context)) {
-                                scheduleReminders(context);
-                            }
 
 
-                           navController.popBackStack() }
                            /*
                            if(isReminderSet) {
                                val handlePermission: () -> Unit = {

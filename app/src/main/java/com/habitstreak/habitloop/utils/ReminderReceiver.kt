@@ -9,14 +9,18 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.habitstreak.habitloop.R
 
+// Modified ReminderReceiver.kt
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
+        // Create the notification channel
         NotificationHelper.createNotificationChannel(context)
+
+        val habitTitle = intent?.getStringExtra("HABIT_TITLE") ?: "Habit Reminder"
 
         val notification = NotificationCompat.Builder(context, NotificationHelper.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Reminder")
-            .setContentText("It's time for your habit!")
+            .setContentTitle(habitTitle)
+            .setContentText("Time to complete your habit!")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
@@ -26,7 +30,14 @@ class ReminderReceiver : BroadcastReceiver() {
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            NotificationManagerCompat.from(context).notify(1001, notification)
+            NotificationManagerCompat.from(context).notify(
+                generateUniqueRequestCode(
+                    intent?.getIntExtra("DAY_OF_WEEK", 1) ?: 1,
+                    intent?.getIntExtra("HOUR", 0) ?: 0,
+                    intent?.getIntExtra("MINUTE", 0) ?: 0
+                ),
+                notification
+            )
         }
 
         // Reschedule next reminder
@@ -37,4 +48,5 @@ class ReminderReceiver : BroadcastReceiver() {
         if (dayOfWeek != -1 && hour != -1 && minute != -1) {
             scheduleReminder(context, dayOfWeek, hour, minute)
         }
-    }}
+    }
+}

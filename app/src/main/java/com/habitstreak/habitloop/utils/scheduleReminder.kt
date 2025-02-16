@@ -74,7 +74,7 @@ private fun calculateNextTriggerTime(dayOfWeek: Int, hour: Int, minute: Int): Lo
     return calendar.timeInMillis
 }
 
-private fun generateUniqueRequestCode(dayOfWeek: Int, hour: Int, minute: Int): Int {
+fun generateUniqueRequestCode(dayOfWeek: Int, hour: Int, minute: Int): Int {
     return dayOfWeek * 10000 + hour * 100 + minute
 }
 

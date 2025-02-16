@@ -43,6 +43,16 @@ fun HabitListScreen(
 ) {
     val habits by viewModel.allHabits.collectAsState()
 
+
+    // check and rest streaks when screen loads
+
+    LaunchedEffect(habits) {
+        habits.forEach{
+            habit ->
+                checkAndResetStreak(habit, viewModel);
+        }
+    }
+
     Scaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -205,6 +215,47 @@ private fun EmptyStateUI(modifier: Modifier = Modifier) {
     }
 }
 
+private fun checkAndResetStreak(habit: HabitEntity, viewModel: HabitViewModel) {
+    val today = LocalDate.now()
+    val lastModified = habit.lastStreakModified.toLocalDate()
+
+    // Get the most recent frequency day before today
+    val lastFrequencyDay = findLastFrequencyDay(today, habit.frequency)
+
+    // If last modified date is before the last frequency day, reset streak
+    if (lastModified.isBefore(lastFrequencyDay)) {
+        viewModel.addOrUpdateHabit(
+            habit.copy(
+                curStreak = 0,
+                //lastStreakModified = LocalDateTime.now()
+            )
+        )
+    }
+}
+
+
+private fun findLastFrequencyDay(today: LocalDate, frequency: List<String>): LocalDate {
+    var checkDate = today
+
+    // Look back up to 7 days to find the last frequency day
+
+    for (i in 0..7) {
+        val dayName = checkDate.dayOfWeek.name
+            .take(3)
+            .lowercase()
+            .replaceFirstChar { it.uppercase() }
+
+        if (dayName in frequency) {
+            return checkDate
+        }
+        checkDate = checkDate.minusDays(1)
+    }
+
+    // If no frequency day found in last week, return today
+    return today
+}
+
+
 @Composable
 private fun StreakCounter(current: Int, highest: Int, enabled: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -232,17 +283,41 @@ private fun StreakCounter(current: Int, highest: Int, enabled: Boolean) {
 
 private fun tryUpdateStreak(habit: HabitEntity, viewModel: HabitViewModel) {
     val today = LocalDate.now()
-    // activity should be in the format of yyyy-MM-dd
-    val activityDate: String = today.toString()
-    println("Control Reaches here")
-    viewModel.addOrUpdateHabit(
-        habit.copy(
-            curStreak = habit.curStreak + 1,
-            highestStreak = maxOf(habit.highestStreak, habit.curStreak + 1),
-            lastStreakModified = LocalDateTime.now(),
-            activity = habit.activity + activityDate
-        )
-    )
+    val lastModified = habit.lastStreakModified.toLocalDate()
+    val daysSinceLast = ChronoUnit.DAYS.between(lastModified, today)
+
+    // Format current day to match frequency format
+    val currentDayFormatted = today.dayOfWeek.name
+        .take(3)
+        .lowercase()
+        .replaceFirstChar { it.uppercase() }
+
+    // Check if today is a frequency day and hasn't been updated in the last 24 hours
+    println("Habit Frequency       Habit Frequency " )
+    println(habit.frequency)
+    if (currentDayFormatted in habit.frequency && daysSinceLast >= 1) {
+        // If we missed the last frequency day, reset streak
+        val lastFrequencyDay = findLastFrequencyDay(today.minusDays(1), habit.frequency)
+        if (lastModified.isBefore(lastFrequencyDay)) {
+            viewModel.addOrUpdateHabit(
+                habit.copy(
+                    curStreak = 1, // Reset and start new streak
+                    lastStreakModified = LocalDateTime.now(),
+                    activity = habit.activity + today.toString()
+                )
+            )
+        } else {
+            // Continue streak
+            viewModel.addOrUpdateHabit(
+                habit.copy(
+                    curStreak = habit.curStreak + 1,
+                    highestStreak = maxOf(habit.highestStreak, habit.curStreak + 1),
+                    lastStreakModified = LocalDateTime.now(),
+                    activity = habit.activity + today.toString()
+                )
+            )
+        }
+    }
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
