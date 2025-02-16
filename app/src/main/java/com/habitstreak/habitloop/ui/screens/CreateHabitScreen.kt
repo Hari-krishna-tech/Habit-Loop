@@ -42,9 +42,13 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import android.Manifest
+import android.app.AlarmManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.ContactsContract
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -65,7 +69,28 @@ fun CreateHabitScreen(
     var isReminderSet by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf<LocalDateTime?>(null) }
     val context = LocalContext.current;
+    var showPermissionDialog by remember { mutableStateOf(false) }
 
+
+
+    fun hasAlarmPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }
+
+
+    fun openAlarmSettings(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val intent = Intent().apply {
+                action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+            }
+            context.startActivity(intent)
+        }
+    }
     // notification permission handling
     fun scheduleReminders(context: Context) {
         if (isReminderSet && reminderTime != null) {
@@ -102,6 +127,94 @@ fun CreateHabitScreen(
     }
 
 
+
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text("Permission Required") },
+            text = {
+                Text("To set reminders for your habits, we need permission to schedule alarms. " +
+                        "You'll be directed to system settings to enable this permission.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionDialog = false
+                        openAlarmSettings(context)
+                        // Keep the screen open so user can return and try again
+                    }
+                ) {
+                    Text("Open Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionDialog = false
+                        // Save habit without reminder
+                        isReminderSet = false
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text("Skip Reminder")
+                }
+            }
+        )
+    }
+
+    /*
+        if(showPermissionDialog) {
+            BasicAlertDialog(
+                onDismissRequest = { showPermissionDialog = false }
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Title
+                    Text(
+                        text = "Permission Required",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Message
+                    Text(
+                        text = "To set reminders for your habits, we need permission...",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // Buttons row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = {
+                                showPermissionDialog = false
+                                navController.popBackStack()
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Spacer(Modifier.width(8.dp))
+
+                        TextButton(
+                            onClick = {
+                                showPermissionDialog = false
+                                permissionLauncher.launch(alarmPermission)
+                            }
+                        ) {
+                            Text("Grant Permission")
+                        }
+                    }
+                }
+            }
+        }
+    */
     val predefinedHabits = listOf(
         PredefinedHabit("Morning Water", "💧", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
         PredefinedHabit("Daily Steps", "👣", setOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
@@ -552,7 +665,9 @@ fun CreateHabitScreen(
                            println(LocalDateTime.now().minusDays(1).toString())
                            println(isReminderSet)
                            println(reminderTime ?: LocalDateTime.now())
-
+                           if(isReminderSet && !hasAlarmPermission(context)) {
+                               showPermissionDialog = true
+                           } else {
                            viewModel.addOrUpdateHabit(
                                HabitEntity(
                                    title = title,
@@ -567,7 +682,13 @@ fun CreateHabitScreen(
 
 
                            // Schedule reminders if enabled
+                            if(isReminderSet && hasAlarmPermission(context)) {
+                                scheduleReminders(context);
+                            }
 
+
+                           navController.popBackStack() }
+                           /*
                            if(isReminderSet) {
                                val handlePermission: () -> Unit = {
                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -580,7 +701,9 @@ fun CreateHabitScreen(
                                            navController.popBackStack()
                                        } else {
                                            // Show permission dialog without popping back
+
                                            permissionLauncher.launch(alarmPermission)
+                                           showPermissionDialog = true
                                        }
                                    } else {
                                        scheduleReminders(context)
@@ -592,7 +715,7 @@ fun CreateHabitScreen(
                                handlePermission()
                            } else {
                                navController.popBackStack()
-                           }
+                           } */
                        }
                    },
                    modifier = Modifier
